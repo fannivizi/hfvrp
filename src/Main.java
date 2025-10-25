@@ -16,6 +16,7 @@ public class Main {
         CWSavings cw = new CWSavings(fleet, nodes, depot);
         cw.run();
         List<Path> cw_res = cw.getPaths();
+        System.out.println(cw_res);
         System.out.println(new Statistics(cw_res));
     }
 }

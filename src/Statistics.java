@@ -21,12 +21,12 @@ public class Statistics {
                 vehicle_num += 1;
                 node_num += path.getNodes().size();
                 distance += path.distance();
-                //efficiency += path.efficiency();
-                //cost += path.totalCost();
+                efficiency += path.efficiency();
+                cost += path.totalCost();
             }
         }
         node_num = node_num - vehicle_num*2 + 1;
-        //efficiency /= vehicle_num;
+        efficiency /= vehicle_num;
     }
 
     @Override

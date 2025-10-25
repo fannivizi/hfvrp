@@ -44,7 +44,7 @@ public class Path {
         return "Path{" +
                 "vehicle=" + vehicle +
                 ", nodes=" + path +
-                '}';
+                "}\n";
     }
 
     public int distance() {

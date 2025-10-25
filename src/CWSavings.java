@@ -45,6 +45,46 @@ public class CWSavings {
         savings.sort(Collections.reverseOrder());
 
         //merge routes with biggest savings -- fucked
+        for(Saving saving: savings) {
+            Node a, b;
+            Path a_path = null, b_path = null;
+            a = saving.getA();
+            b = saving.getB();
 
+            //find the path of the nodes
+            for(Path p: paths) {
+                if(p.getNodes().contains(a)) a_path = p;
+                if(p.getNodes().contains(b)) b_path = p;
+            }
+
+            //if on same route or interior, skip
+            if(a_path == b_path || interior(a_path, a) || interior(b_path, b)) continue;
+
+            //if demand of route < capacity, merge
+            if(a_path.demand() + b_path.demand() <= Integer.max(a_path.getVehicle().getCapacity(), b_path.getVehicle().getCapacity())) {
+                paths.remove(a_path);
+                paths.remove(b_path);
+                paths.add(a_path.merge(b_path));
+                continue;
+            }
+
+            //if demand> capacity, try to upgrade vehicle
+            int v = -1;
+            for (int i = 0; i < fleet.size(); i++) {
+                if(fleet.get(i).getCapacity() > a_path.demand() + b_path.demand()) {
+                    v = i;
+                    a_path.setVehicle(fleet.get(i));
+                    break;
+                }
+            }
+            if(v == -1) {
+                continue;
+            } else {
+                fleet.remove(v);
+                paths.remove(a_path);
+                paths.remove(b_path);
+                paths.add(a_path.merge(b_path));
+            }
+        }
     }
 }
