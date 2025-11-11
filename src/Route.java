@@ -1,16 +1,16 @@
 import java.util.ArrayList;
 import java.util.List;
 
-public class Path {
+public class Route {
     private Vehicle vehicle;
     private List<Node> nodes;
 
-    public Path(Vehicle vehicle) {
+    public Route(Vehicle vehicle) {
         this.vehicle = vehicle;
         nodes = new ArrayList<>();
     }
 
-    public Path(Vehicle vehicle, List<Node> nodes) {
+    public Route(Vehicle vehicle, List<Node> nodes) {
         this.vehicle = vehicle;
         this.nodes = nodes;
     }
@@ -37,13 +37,13 @@ public class Path {
 
     @Override
     public String toString() {
-        String path = "";
+        String route = "";
         for(Node node: nodes) {
-            path += node + " ";
+            route += node + " ";
         }
         return "Path{" +
                 "vehicle=" + vehicle +
-                ", nodes=" + path +
+                ", nodes=" + route +
                 "}\n";
     }
 
@@ -69,23 +69,5 @@ public class Path {
 
     public int totalCost() {
         return vehicle.getFixed_cost() + vehicle.getUnit_distance_cost()*distance();
-    }
-
-    public Path merge(Path o) {
-        Path p;
-        if(vehicle.compareTo(o.vehicle) >= 0) {
-            p = new Path(this.vehicle);
-        } else {
-            p = new Path(o.getVehicle());
-        }
-        p.addNode(this.nodes.getFirst());
-        for (int i = 1; i < nodes.size()-1; i++) {
-            p.addNode(nodes.get(i));
-        }
-        for (int i = 1; i < o.nodes.size()-1; i++) {
-            p.addNode(o.nodes.get(i));
-        }
-        p.addNode(this.nodes.getLast());
-        return p;
     }
 }

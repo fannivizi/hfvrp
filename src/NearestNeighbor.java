@@ -7,7 +7,7 @@ public class NearestNeighbor {
     private List<Vehicle> fleet;
     private List<Node> nodes;
     private Node depot;
-    private List<Path> paths;
+    private List<Route> routes;
     private Random random;
 
     public NearestNeighbor(List<Vehicle> fleet, List<Node> nodes, Node depot) {
@@ -16,10 +16,10 @@ public class NearestNeighbor {
         this.nodes = new ArrayList<>(nodes);
         this.depot = depot;
         this.random = new Random();
-        this.paths = new ArrayList<>();
+        this.routes = new ArrayList<>();
     }
 
-    public List<Path> run() {
+    public List<Route> run() {
         Vehicle v;
         int capacity;
         while(!nodes.isEmpty() && !fleet.isEmpty()) {
@@ -29,8 +29,8 @@ public class NearestNeighbor {
             //v = fleet.get(random.nextInt(fleet.size()));
             fleet.remove(v);
             capacity = 0;
-            Path path = new Path(v);
-            path.addNode(depot);
+            Route route = new Route(v);
+            route.addNode(depot);
             while(!nodes.isEmpty()) {
                 //Node nearest = nodes.getFirst();
                 boolean first = true;
@@ -43,15 +43,15 @@ public class NearestNeighbor {
                 }
                 capacity += nearest.getDemand();
                 if(capacity >= v.getCapacity()) {
-                    path.addNode(depot);
-                    paths.add(path);
+                    route.addNode(depot);
+                    routes.add(route);
                     break;
                 }
-                path.addNode(nearest);
+                route.addNode(nearest);
                 current = nearest;
                 nodes.remove(current);
             }
         }
-        return paths;
+        return routes;
     }
 }

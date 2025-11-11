@@ -1,28 +1,28 @@
 import java.util.List;
 
 public class Statistics {
-    private List<Path> paths;
+    private List<Route> routes;
     private int vehicle_num;
     private int node_num;
     private int distance;
     private double efficiency;
     private int cost;
 
-    public Statistics(List<Path> paths) {
-        this.paths = paths;
+    public Statistics(List<Route> routes) {
+        this.routes = routes;
         this.vehicle_num = 0;
         this.node_num = 0;
         this.distance = 0;
         this.efficiency = 0;
         this.cost = 0;
 
-        for(Path path: paths) {
-            if(path.distance() != 0) {
+        for(Route route : routes) {
+            if(route.distance() != 0 && route.getVehicle() != null) {
                 vehicle_num += 1;
-                node_num += path.getNodes().size();
-                distance += path.distance();
-                efficiency += path.efficiency();
-                cost += path.totalCost();
+                node_num += route.getNodes().size();
+                distance += route.distance();
+                efficiency += route.efficiency();
+                cost += route.totalCost();
             }
         }
         node_num = node_num - vehicle_num*2 + 1;
