@@ -1,3 +1,9 @@
+package algorithms;
+
+import model.Node;
+import model.Route;
+import model.Vehicle;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

@@ -1,3 +1,5 @@
+package model;
+
 public class Vehicle implements Comparable<Vehicle> {
     private int index;
     private int capacity;

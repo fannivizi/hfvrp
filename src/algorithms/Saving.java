@@ -1,3 +1,7 @@
+package algorithms;
+
+import model.Node;
+
 public class Saving implements Comparable<Saving>{
     private Node a;
     private Node b;

@@ -1,10 +1,16 @@
 import java.util.List;
 
+import algorithms.CWSavings;
+import algorithms.NearestNeighbor;
+import model.*;
+import utils.Reader;
+import utils.Statistics;
+
 public class Main {
     public static void main(String[] args) {
-        //Reader reader = new Reader("data/test20.vrp");
-        //Reader reader = new Reader("data/X115-HVRP.vrp");
-        //Reader reader = new Reader("data/X148-HVRP.vrp");
+        //Reader reader = new utils.Reader("data/test20.vrp");
+        //Reader reader = new utils.Reader("data/X115-HVRP.vrp");
+        //Reader reader = new utils.Reader("data/X148-HVRP.vrp");
         Reader reader = new Reader("data/X979-HVRP.vrp");
         List<Vehicle> fleet = reader.getFleet();
         List<Node> nodes = reader.getNodes();

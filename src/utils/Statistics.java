@@ -1,3 +1,7 @@
+package utils;
+
+import model.Route;
+
 import java.util.List;
 
 public class Statistics {
@@ -31,7 +35,7 @@ public class Statistics {
 
     @Override
     public String toString() {
-        return "Statistics: \n" +
+        return "utils.Statistics: \n" +
                 "Vehicles used: " + vehicle_num +
                 "\nNodes visited: " + node_num +
                 "\nDistance traveled: " + distance +

@@ -1,3 +1,5 @@
+package model;
+
 public class Node {
     private int index;
     private Coordinate coord;

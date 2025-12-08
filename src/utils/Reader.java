@@ -1,3 +1,8 @@
+package utils;
+
+import model.Node;
+import model.Vehicle;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
