@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Route {
@@ -12,7 +13,7 @@ public class Route {
 
     public Route(Vehicle vehicle, List<Node> nodes) {
         this.vehicle = vehicle;
-        this.nodes = nodes;
+        this.nodes = new ArrayList<>(nodes);
     }
 
     public Vehicle getVehicle() {
@@ -69,5 +70,9 @@ public class Route {
 
     public int totalCost() {
         return vehicle.getFixed_cost() + vehicle.getUnit_distance_cost()*distance();
+    }
+
+    public void reverse() {
+        Collections.reverse(nodes);
     }
 }

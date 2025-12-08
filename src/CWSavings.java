@@ -26,7 +26,7 @@ public class CWSavings {
         return true;
     }
 
-    public Route merge(Route a, Route b) {
+    public Route merge(Route a, Route b, Node node_a, Node node_b) {
         Route p;
 
         //decide which vehicle to use
@@ -43,6 +43,14 @@ public class CWSavings {
                 p = new Route(b.getVehicle());
             }
         }
+
+        //see where the nodes are in the routes
+        boolean a_first = false, b_first = false;
+        if(a.getNodes().get(1) == node_a) a_first = true;
+        if(b.getNodes().get(1) == node_b) b_first = true;
+
+        if(a_first) a.reverse();
+        if(!b_first) b.reverse();
 
         //merge the routes
         p.addNode(a.getNodes().getFirst());
@@ -67,6 +75,7 @@ public class CWSavings {
 
     public void run() {
         nodes.remove(depot);
+
         //create route depot -> node -> depot
         for(Node node: nodes) {
             routes.add(new Route(null, List.of(depot, node, depot)));
@@ -83,7 +92,7 @@ public class CWSavings {
         //sort savings
         savings.sort(Collections.reverseOrder());
 
-        //merge routes with biggest savings -- fucked
+        //merge routes with biggest savings
         for(Saving saving: savings) {
             Node a, b;
             Route a_route = null, b_route = null;
@@ -108,39 +117,38 @@ public class CWSavings {
                     if(a_route.demand() + b_route.demand() <= b_route.getVehicle().getCapacity()) {
                         routes.remove(a_route);
                         routes.remove(b_route);
-                        routes.add(merge(a_route, b_route));
+                        routes.add(merge(a_route, b_route, a, b));
                     }
                 } else {
                     if(a_route.demand() + b_route.demand() <= a_route.getVehicle().getCapacity()) {
                         routes.remove(a_route);
                         routes.remove(b_route);
-                        routes.add(merge(a_route, b_route));
+                        routes.add(merge(a_route, b_route, a, b));
                     }
                 }
                 continue;
             }
 
             //if neither has a vehicle
-            if(cap_options().size() > 1 && a_route.demand() + b_route.demand() <= cap_options().getLast()) {
+            List<Integer> caps = cap_options();
+            if(caps.size() > 1 && a_route.demand() + b_route.demand() <= caps.getLast()) {
                 // if the demand is bigger than the second biggest capacity
-                if(a_route.demand() + b_route.demand() > cap_options().get(cap_options().size()-2)) {
-                    Route p = merge(a_route, b_route);
-                    p.setVehicle(fleet.getLast());
-                    fleet.remove(fleet.getLast());
+                if(a_route.demand() + b_route.demand() > caps.get(cap_options().size()-2)) {
+                    Route p = merge(a_route, b_route, a, b);
+                    p.setVehicle(fleet.removeLast());
                     routes.remove(a_route);
                     routes.remove(b_route);
                     routes.add(p);
                 } else {
                     routes.remove(a_route);
                     routes.remove(b_route);
-                    routes.add(merge(a_route, b_route));
+                    routes.add(merge(a_route, b_route, a, b));
                 }
             } else if(cap_options().size() == 1) {
                 //if all the vehicles have the same capacity
-                if(a_route.demand() + b_route.demand() <= cap_options().getFirst()) {
-                    Route p = merge(a_route, b_route);
-                    p.setVehicle(fleet.getLast());
-                    fleet.remove(fleet.getLast());
+                if(a_route.demand() + b_route.demand() <= caps.getFirst()) {
+                    Route p = merge(a_route, b_route, a, b);
+                    p.setVehicle(fleet.removeLast());
                     routes.remove(a_route);
                     routes.remove(b_route);
                     routes.add(p);

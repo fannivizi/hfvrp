@@ -36,7 +36,7 @@ public class NearestNeighbor {
                 boolean first = true;
                 Node nearest = new Node(0, 0, 0);
                 for (Node node: nodes) {
-                    if(first || (current.distance(nearest) > current.distance(node) && capacity + node.getDemand() <= v.getCapacity())) {
+                    if(first || (current.distance(nearest) > current.distance(node) /*&& capacity + node.getDemand() <= v.getCapacity()*/)) {
                         first = false;
                         nearest = node;
                     }
