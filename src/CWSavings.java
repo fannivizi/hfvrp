@@ -10,7 +10,6 @@ public class CWSavings {
 
     public CWSavings(List<Vehicle> fleet, List<Node> nodes, Node depot) {
         this.fleet = new ArrayList<>(fleet);
-        Collections.sort(fleet);
         this.nodes = new ArrayList<>(nodes);
         this.depot = depot;
         this.routes = new ArrayList<>();
@@ -26,23 +25,14 @@ public class CWSavings {
         return true;
     }
 
-    public Route merge(Route a, Route b, Node node_a, Node node_b) {
+    public void merge(Route a, Route b, Node node_a, Node node_b, Vehicle v) {
         Route p;
 
-        //decide which vehicle to use
-        if(a.getVehicle() == null && b.getVehicle()== null) {
-            p = new Route(null);
-        } else if (a.getVehicle() == null) {
-            p = new Route(b.getVehicle());
-        } else if (b.getVehicle() == null) {
-            p = new Route(a.getVehicle());
-        } else {
-            if(a.getVehicle().compareTo(b.getVehicle()) >= 0) {
-                p = new Route(a.getVehicle());
-            } else {
-                p = new Route(b.getVehicle());
-            }
-        }
+        //remove routes from the routes list
+        routes.remove(a);
+        routes.remove(b);
+
+        p = new Route(v);
 
         //see where the nodes are in the routes
         boolean a_first = false, b_first = false;
@@ -61,16 +51,9 @@ public class CWSavings {
             p.addNode(b.getNodes().get(i));
         }
         p.addNode(a.getNodes().getLast());
-        return p;
-    }
 
-    public List<Integer> cap_options() {
-        List<Integer>  l = new ArrayList<>();
-        for(Vehicle v: fleet) {
-            if(!l.contains(v.getCapacity())) l.add(v.getCapacity());
-        }
-        Collections.sort(l);
-        return l;
+        //add new route to the list
+        routes.add(p);
     }
 
     public void run() {
@@ -115,43 +98,23 @@ public class CWSavings {
             if(a_route.getVehicle() != null || b_route.getVehicle() != null) {
                 if(a_route.getVehicle() == null) {
                     if(a_route.demand() + b_route.demand() <= b_route.getVehicle().getCapacity()) {
-                        routes.remove(a_route);
-                        routes.remove(b_route);
-                        routes.add(merge(a_route, b_route, a, b));
+                        merge(a_route, b_route, a, b, b_route.getVehicle());
                     }
                 } else {
                     if(a_route.demand() + b_route.demand() <= a_route.getVehicle().getCapacity()) {
-                        routes.remove(a_route);
-                        routes.remove(b_route);
-                        routes.add(merge(a_route, b_route, a, b));
+                        merge(a_route, b_route, a, b, a_route.getVehicle());
                     }
                 }
                 continue;
             }
 
             //if neither has a vehicle
-            List<Integer> caps = cap_options();
-            if(caps.size() > 1 && a_route.demand() + b_route.demand() <= caps.getLast()) {
-                // if the demand is bigger than the second biggest capacity
-                if(a_route.demand() + b_route.demand() > caps.get(cap_options().size()-2)) {
-                    Route p = merge(a_route, b_route, a, b);
-                    p.setVehicle(fleet.removeLast());
-                    routes.remove(a_route);
-                    routes.remove(b_route);
-                    routes.add(p);
-                } else {
-                    routes.remove(a_route);
-                    routes.remove(b_route);
-                    routes.add(merge(a_route, b_route, a, b));
-                }
-            } else if(cap_options().size() == 1) {
-                //if all the vehicles have the same capacity
-                if(a_route.demand() + b_route.demand() <= caps.getFirst()) {
-                    Route p = merge(a_route, b_route, a, b);
-                    p.setVehicle(fleet.removeLast());
-                    routes.remove(a_route);
-                    routes.remove(b_route);
-                    routes.add(p);
+            for (int i = 0; i < fleet.size(); i++) {
+                Vehicle v = fleet.get(i);
+                if(a_route.demand() + b_route.demand() <= v.getCapacity()) {
+                    fleet.remove(v);
+                    merge(a_route, b_route, a, b, v);
+                    break;
                 }
             }
         }
