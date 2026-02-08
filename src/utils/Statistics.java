@@ -33,6 +33,18 @@ public class Statistics {
         efficiency /= vehicle_num;
     }
 
+    public int getVehicle_num() {
+        return vehicle_num;
+    }
+
+    public int getNode_num() {
+        return node_num;
+    }
+
+    public int getCost() {
+        return cost;
+    }
+
     @Override
     public String toString() {
         return "utils.Statistics: \n" +
