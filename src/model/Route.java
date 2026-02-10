@@ -38,6 +38,8 @@ public class Route {
         this.nodes.add(node);
     }
 
+    public void addNode(Node n, int i) { this.nodes.add(i, n);}
+
     @Override
     public String toString() {
         String route = "";
@@ -45,7 +47,7 @@ public class Route {
             route += node + " ";
         }
         return "Path{" +
-                "vehicle=" + vehicle +
+                "vehicle=" + vehicle.getIndex() + ", " + vehicle.getCapacity() +
                 ", nodes=" + route +
                 "}\n";
     }

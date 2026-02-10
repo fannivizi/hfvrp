@@ -5,7 +5,7 @@ import java.util.List;
 
 public class Individual implements Comparable<Individual>{
     List<Integer> routes;
-    int fitness;
+    double fitness;
 
     public Individual() {
         this.routes = new ArrayList<>();
@@ -20,11 +20,11 @@ public class Individual implements Comparable<Individual>{
         routes.add(s);
     }
 
-    public void setFitness(int fitness) {
+    public void setFitness(double fitness) {
         this.fitness = fitness;
     }
 
-    public int getFitness() {
+    public double getFitness() {
         return fitness;
     }
 
@@ -38,6 +38,6 @@ public class Individual implements Comparable<Individual>{
 
     @Override
     public int compareTo(Individual o) {
-        return Integer.compare(o.fitness, this.fitness);
+        return Double.compare(o.fitness, this.fitness);
     }
 }
