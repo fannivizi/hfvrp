@@ -47,7 +47,7 @@ public class Route {
             route += node + " ";
         }
         return "Path{" +
-                "vehicle=" + vehicle.getIndex() + ", " + vehicle.getCapacity() +
+                "vehicle=" + vehicle +
                 ", nodes=" + route +
                 "}\n";
     }

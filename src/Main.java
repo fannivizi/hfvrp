@@ -9,10 +9,10 @@ import utils.Statistics;
 
 public class Main {
     public static void main(String[] args) {
-        Reader reader = new utils.Reader("data/test20.vrp");
+        //Reader reader = new utils.Reader("data/test20.vrp");
         //Reader reader = new utils.Reader("data/X115-HVRP.vrp");
-        //Reader reader = new utils.Reader("data/X148-HVRP.vrp");
-        //Reader reader = new Reader("data/X275-HVRP.vrp");
+        Reader reader = new utils.Reader("data/X148-HVRP.vrp");
+        //Reader reader = new Reader("data/X393-HVRP.vrp");
         List<Vehicle> fleet = reader.getFleet();
         List<Node> nodes = reader.getNodes();
         Node depot = reader.getDepot();
@@ -30,7 +30,7 @@ public class Main {
 
         NearestNeighbor nn = new NearestNeighbor(fleet, nodes, depot);
         List<Route> nn_res = nn.run();
-        System.out.println(new Statistics(nn_res));
+        //System.out.println(new Statistics(nn_res));
 
         CWSavings cw = new CWSavings(fleet, nodes, depot);
         cw.run();
@@ -38,7 +38,7 @@ public class Main {
         //System.out.println(cw_res);
         System.out.println(new Statistics(cw_res));
 
-        Genetic g = new Genetic(fleet, nodes, depot, 10, 10);
+        Genetic g = new Genetic(fleet, nodes, depot, 200, 1000);
         g.run();
     }
 }

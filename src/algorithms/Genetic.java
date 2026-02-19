@@ -27,6 +27,20 @@ public class Genetic {
         this.generations = generations;
     }
 
+    public void correct(List<Node> nodes, List<Route> sol) {
+        Iterator<Node> it = nodes.iterator();
+        while (it.hasNext()) {
+            Node n = it.next();
+
+            for(Route r: sol) {
+                if(r.demand() + n.getDemand() <= r.getVehicle().getCapacity()) {
+                    r.addNode(n, 1);
+                    it.remove();
+                    break;
+                }
+            }
+        }
+    }
     //TODO: doesn't go to all nodes, except for the big graphs?
     public List<Route> random_sol() {
         List<Route> sol = new ArrayList<>();
@@ -47,8 +61,9 @@ public class Genetic {
             r.addNode(depot);
             sol.add(r);
         }
-        //TODO: maybe see if remaining nodes fit anywhere?
-        Iterator<Node> it = nodes.iterator();
+        //see if remaining nodes fit anywhere
+
+        /*Iterator<Node> it = nodes.iterator();
         while (it.hasNext()) {
             Node n = it.next();
 
@@ -59,7 +74,8 @@ public class Genetic {
                     break;
                 }
             }
-        }
+        }*/
+        correct(nodes, sol);
 
         //put rest of the nodes in a separate route, so they're the same length
         if(!nodes.isEmpty()) {
@@ -71,16 +87,25 @@ public class Genetic {
             sol.add(r);
         }
 
-        System.out.println(nodes.size());
         return sol;
     }
 
     public Individual code(List<Route> sol) {
+        int count = -1;
         Individual i = new Individual();
-        i.addr(1);
+        i.addr(count);
         for(Route r: sol) {
             for (int j = 1; j < r.getNodes().size(); j++) {
-                i.addr(r.getNodes().get(j).getIndex());
+                if(r.getNodes().get(j).getIndex() == depot.getIndex()) {
+                    i.addr(--count);
+                } else {
+                    i.addr(r.getNodes().get(j).getIndex());
+                }
+            }
+        }
+        if(sol.size() != fleet.size()) {
+            for (int j = 0; j < fleet.size() - sol.size(); j++) {
+                i.addr(--count);
             }
         }
         i.setFitness(fitness(sol));
@@ -98,7 +123,7 @@ public class Genetic {
 
         while(!routes.isEmpty()) {
             int i = routes.removeFirst();
-            if(i == depot.getIndex()) {
+            if(i < 0) {
                 res.getLast().addNode(depot);
                 if(!routes.isEmpty()) {
                     res.add(new Route(null));
@@ -134,18 +159,25 @@ public class Genetic {
     }
 
     public void population_init() {
+        CWSavings cw = new CWSavings(fleet, nodes, depot);
+        cw.run();
         for (int i = 0; i < population_size; i++) {
-            population.add(code(random_sol()));
+            if(rand.nextDouble() < 0.02) {
+                population.add(code(cw.getRoutes()));
+            } else {
+                population.add(code(random_sol()));
+            }
         }
     }
 
-    //TODO: how do we know the vehicles aren't overloaded? + better fitness?
+    //TODO: better fitness?
     public double fitness(List<Route> routes) {
         Statistics stats = new Statistics(routes);
-        double num = stats.getCost() + (nodes.size() - stats.getNode_num()) * 100000;
-        return 100000000.0/num;
+        double num = stats.getCost() + (nodes.size()+1 - stats.getNode_num()) * 1000000;
+        return num;
     }
 
+    //TODO: minimize
     public List<Individual> roulette_selection() {
         Collections.sort(population);
         double sum = 0;
@@ -169,6 +201,28 @@ public class Genetic {
         return parents;
     }
 
+    public List<Individual> tournament_selection() {
+        List<Individual> parents = new ArrayList<>();
+        for (int i = 0; i < population.size(); i++) {
+            double min_f = 0;
+            int min_i = -1;
+            for (int j = 0; j < 3; j++) {
+                if(min_i == -1) {
+                    min_i = rand.nextInt(population_size);
+                    min_f = population.get(min_i).fitness;
+                } else {
+                    int next = rand.nextInt(population_size);
+                    if(min_f > population.get(next).fitness) {
+                        min_i = next;
+                        min_f = population.get(next).fitness;
+                    }
+                }
+            }
+            parents.add(population.get(min_i));
+        }
+        return parents;
+    }
+
     public List<Integer[]> pmx_crossover(Individual parent1, Individual parent2) {
         List<Integer[]> children = new ArrayList<>();
 
@@ -183,10 +237,10 @@ public class Genetic {
         //initialising children
         Integer[] c1 = new Integer[p1.length];
         Integer[] c2 = new Integer[p2.length];
-        Arrays.fill(c1, -1);
-        Arrays.fill(c2, -1);
-        c1[0] = depot.getIndex();
-        c2[0] = depot.getIndex();
+        Arrays.fill(c1, 0);
+        Arrays.fill(c2, 0);
+        c1[0] = p1[0];
+        c2[0] = p2[0];
 
         //copying the genes between the crossover points
         for (int i = start; i <= end; i++) {
@@ -194,39 +248,20 @@ public class Genetic {
             c2[i] = p2[i];
         }
 
-        //checking for genes that haven't been copied TODO: gets stuck in an infinite loop if there's a sequence of numbers where all of them are already occupied, a number can appear twice?
-        List<Integer> ones1 = new ArrayList<>();
-        List<Integer> ones2 = new ArrayList<>();
-        for (int i = 1; i < p1.length; i++) {
-            if(p1[i] == 1) ones1.add(i);
-            if(p2[i] == 1) ones2.add(i);
-        }
-        List<Integer> copy1;
-        List<Integer> copy2;
-
+        //checking for genes that haven't been copied
         for (int i = start; i <= end; i++) {
-            copy1 = new ArrayList<>(ones1);
-            copy2 = new ArrayList<>(ones2);
             if(!Arrays.asList(c1).contains(p2[i])) {
                 int new_i = Arrays.asList(p2).indexOf(c1[i]);
-                while(c1[new_i] != -1) {
-                    if(c1[new_i] == 1) {
-                        new_i = copy2.removeFirst();
-                    } else {
-                        new_i = Arrays.asList(p2).indexOf(c1[new_i]);
-                    }
+                while(c1[new_i] != 0) {
+                    new_i = Arrays.asList(p2).indexOf(c1[new_i]);
                 }
                 c1[new_i] = p2[i];
             }
 
             if(!Arrays.asList(c2).contains(p1[i])) {
                 int new_i = Arrays.asList(p1).indexOf(c2[i]);
-                while(c2[new_i] != -1) {
-                    if(c2[new_i] == 1) {
-                        new_i = copy1.removeFirst();
-                    } else {
-                        new_i = Arrays.asList(p1).indexOf(c2[new_i]);
-                    }
+                while(c2[new_i] != 0) {
+                    new_i = Arrays.asList(p1).indexOf(c2[new_i]);
                 }
                 c2[new_i] = p1[i];
             }
@@ -234,11 +269,11 @@ public class Genetic {
 
         //copying the rest from one parent
         for (int i = 0; i < c1.length; i++) {
-            if(c1[i] == -1) {
+            if(c1[i] == 0) {
                 c1[i] = p2[i];
             }
 
-            if(c2[i] == -1) {
+            if(c2[i] == 0) {
                 c2[i] = p1[i];
             }
         }
@@ -263,8 +298,8 @@ public class Genetic {
         //initialising children
         Integer[] c1 = new Integer[p1.size()];
         Integer[] c2 = new Integer[p2.size()];
-        Arrays.fill(c1, -1);
-        Arrays.fill(c2, -1);
+        Arrays.fill(c1, 0);
+        Arrays.fill(c2, 0);
 
         //copying the genes between the crossover points
         for (int i = start; i <= end; i++) {
@@ -278,8 +313,8 @@ public class Genetic {
         }
 
         for (int i = 0; i < c1.length; i++) {
-            if(c1[i] == -1) c1[i] = p2.removeFirst();
-            if(c2[i] == -1) c2[i] = p1.removeFirst();
+            if(c1[i] == 0) c1[i] = p2.removeFirst();
+            if(c2[i] == 0) c2[i] = p1.removeFirst();
         }
 
         children.add(c1);
@@ -305,19 +340,26 @@ public class Genetic {
         for (int i = 0; i < generations; i++) {
             children = new ArrayList<>();
             mean = 0;
-            parents = roulette_selection();
+            parents = tournament_selection();
             while(!parents.isEmpty()) {
                 temp.addAll(ox_crossover(parents.removeFirst(), parents.removeFirst()));
                 children.add(new Individual(Arrays.asList(temp.removeFirst())));
                 children.add(new Individual(Arrays.asList(temp.removeFirst())));
             }
             for(Individual ind: children) {
-                if(rand.nextDouble() < 0.01) swap_mutation(ind);
+                if(rand.nextDouble() < 0.001) swap_mutation(ind);
                 ind.setFitness(fitness(decode(ind)));
                 mean += ind.getFitness();
             }
-            population = children;
-            System.out.println(i+1 + ".gen: "  + mean/10);
+            if((i+1)%100 == 0) {
+                population = children;
+                Collections.sort(children);
+                System.out.println(i+1 + ".gen: " + children.getLast().fitness + ", mean: " + mean/children.size());
+            }
         }
+        Collections.sort(population);
+        //System.out.println(new Statistics(decode(population.getFirst())));
+        Collections.reverse(population);
+        System.out.println(new Statistics(decode(population.getFirst())));
     }
 }
