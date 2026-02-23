@@ -27,6 +27,30 @@ public class Genetic {
         this.generations = generations;
     }
 
+    public Individual correct(List<Route> routes) {
+        List<Node> nodes = new ArrayList<>();
+        List<Route> sol = new ArrayList<>();
+
+        for(Route r: routes) {
+            if(r.getVehicle() == null) {
+                nodes.addAll(r.getNodes());
+                nodes.remove(depot);
+            } else {
+                sol.add(r);
+                while(r.demand() > r.getVehicle().getCapacity()) {
+                    nodes.add(r.getNodes().remove(r.getNodes().size()-2));
+                }
+            }
+        }
+        correct(nodes, sol);
+        if(!nodes.isEmpty()) {
+            sol.add(new Route(null, new ArrayList<>(nodes)));
+        }
+
+        return code(sol);
+    }
+
+    //TODO: implement to correct paths after crossover
     public void correct(List<Node> nodes, List<Route> sol) {
         Iterator<Node> it = nodes.iterator();
         while (it.hasNext()) {
@@ -41,6 +65,7 @@ public class Genetic {
             }
         }
     }
+
     //TODO: doesn't go to all nodes, except for the big graphs?
     public List<Route> random_sol() {
         List<Route> sol = new ArrayList<>();
@@ -90,34 +115,77 @@ public class Genetic {
         return sol;
     }
 
+    //use the negative numbers to indicate the id of the route's vehicle (i.e -3 for vehicle3)
     public Individual code(List<Route> sol) {
-        int count = -1;
+        List<Vehicle> fleet = new ArrayList<>(this.fleet);
         Individual i = new Individual();
-        i.addr(count);
         for(Route r: sol) {
             for (int j = 1; j < r.getNodes().size(); j++) {
                 if(r.getNodes().get(j).getIndex() == depot.getIndex()) {
-                    i.addr(--count);
+                    if(r.getVehicle() == null) continue;
+                    i.addr(-r.getVehicle().getIndex());
+                    fleet.remove(r.getVehicle());
                 } else {
                     i.addr(r.getNodes().get(j).getIndex());
                 }
             }
         }
-        if(sol.size() != fleet.size()) {
-            for (int j = 0; j < fleet.size() - sol.size(); j++) {
-                i.addr(--count);
-            }
+        for(Vehicle v: fleet) {
+            i.addr(-v.getIndex());
         }
         i.setFitness(fitness(sol));
         return i;
     }
 
+    //TODO: the routes have vehicles when the vehicle is over capacity too
+    /*public List<Route> decode(Individual sol) {
+        List<Route> res = new ArrayList<>();
+        List<Integer> routes = new ArrayList<>(sol.routes);
+        List<Node> nodes = new ArrayList<>(this.nodes);
+
+        res.add(new Route(null));
+        res.getLast().addNode(depot);
+
+        //construct routes from array
+        while(!routes.isEmpty()) {
+            int i = routes.removeFirst();
+            if(i < 0) {
+                res.getLast().addNode(depot);
+                for(Vehicle v: fleet) {
+                    if(v.getIndex() == -i) {
+                        if(res.getLast().demand() > v.getCapacity()) {
+                            res.getLast().setVehicle(null);
+                        } else {
+                            res.getLast().setVehicle(v);
+                        }
+                        break;
+                    }
+                }
+                if(!routes.isEmpty()) {
+                    res.add(new Route(null));
+                    res.getLast().addNode(depot);
+                }
+            } else {
+                //TODO: better way to find the node
+                Node node = null;
+                for(Node n: nodes) {
+                    if(n.getIndex() == i) {
+                        node = n;
+                        nodes.remove(n);
+                        break;
+                    }
+                }
+                res.getLast().addNode(node);
+            }
+        }
+
+        return res;
+    }*/
     public List<Route> decode(Individual sol) {
         List<Route> res = new ArrayList<>();
         List<Integer> routes = new ArrayList<>(sol.routes);
 
         //construct routes from array
-        routes.removeFirst();
         res.add(new Route(null));
         res.getFirst().addNode(depot);
 
@@ -201,12 +269,12 @@ public class Genetic {
         return parents;
     }
 
-    public List<Individual> tournament_selection() {
+    public List<Individual> tournament_selection(int num) {
         List<Individual> parents = new ArrayList<>();
         for (int i = 0; i < population.size(); i++) {
             double min_f = 0;
             int min_i = -1;
-            for (int j = 0; j < 3; j++) {
+            for (int j = 0; j < num; j++) {
                 if(min_i == -1) {
                     min_i = rand.nextInt(population_size);
                     min_f = population.get(min_i).fitness;
@@ -322,6 +390,45 @@ public class Genetic {
         return children;
     }
 
+    public List<Integer[]> cx_crossover(Individual parent1, Individual parent2) {
+        List<Integer[]> children = new ArrayList<>();
+
+        List<Integer> p1 = new ArrayList<>(parent1.routes);
+        List<Integer> p2 = new ArrayList<>(parent2.routes);
+        if(p1.size() != p2.size()) System.out.println("NOT SAME LENGTH!!!!!!!!!!!");
+
+        //random crossover point
+        int cross = rand.nextInt(p1.size());
+
+        //initialising children
+        Integer[] c1 = new Integer[p1.size()];
+        Integer[] c2 = new Integer[p2.size()];
+
+        //find the cycle
+        List<Integer> cycle = new ArrayList<>();
+        cycle.add(cross);
+        int current = p2.indexOf(p1.get(cross));
+        while(current != cross) {
+            cycle.add(current);
+            current = p2.indexOf(p1.get(current));
+        }
+
+        //fill spaces in children
+        for (int i = 0; i < p1.size(); i++) {
+            if(cycle.contains(i)){
+                c1[i] = p1.get(i);
+                c2[i] = p2.get(i);
+            } else {
+                c1[i] = p2.get(i);
+                c2[i] = p1.get(i);
+            }
+        }
+
+        children.add(c1);
+        children.add(c2);
+        return children;
+    }
+
     public void swap_mutation(Individual i) {
         int first = rand.nextInt(1, i.routes.size());
         int second = rand.nextInt(1, i.routes.size());
@@ -340,19 +447,24 @@ public class Genetic {
         for (int i = 0; i < generations; i++) {
             children = new ArrayList<>();
             mean = 0;
-            parents = tournament_selection();
+            parents = tournament_selection(2);
+            //TODO: figure out where to do the correction
             while(!parents.isEmpty()) {
-                temp.addAll(ox_crossover(parents.removeFirst(), parents.removeFirst()));
-                children.add(new Individual(Arrays.asList(temp.removeFirst())));
-                children.add(new Individual(Arrays.asList(temp.removeFirst())));
+                temp.addAll(cx_crossover(parents.removeFirst(), parents.removeFirst()));
             }
-            for(Individual ind: children) {
-                if(rand.nextDouble() < 0.001) swap_mutation(ind);
-                ind.setFitness(fitness(decode(ind)));
+            while(!temp.isEmpty()) {
+                Individual ind = new Individual(Arrays.asList(temp.removeFirst()));
+                if(rand.nextDouble() < 0.1) swap_mutation(ind);
+                List<Route> decoded = decode(ind);
+                //doesn't worg
+                //ind = correct(decoded);
+                ind.setFitness(fitness(decoded));
+                children.add(ind);
+
                 mean += ind.getFitness();
             }
+            population = children;
             if((i+1)%100 == 0) {
-                population = children;
                 Collections.sort(children);
                 System.out.println(i+1 + ".gen: " + children.getLast().fitness + ", mean: " + mean/children.size());
             }
@@ -363,3 +475,5 @@ public class Genetic {
         System.out.println(new Statistics(decode(population.getFirst())));
     }
 }
+//TODO: because of the coding and decoding we disregard the capacity of the vehicle, the demand goes above the capacity
+//TODO: pmx crossover has duplicates
