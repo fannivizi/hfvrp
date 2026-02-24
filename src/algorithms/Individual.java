@@ -20,6 +20,10 @@ public class Individual implements Comparable<Individual>{
         routes.add(s);
     }
 
+    public void setRoutes(List<Integer> routes) {
+        this.routes = routes;
+    }
+
     public void setFitness(double fitness) {
         this.fitness = fitness;
     }
