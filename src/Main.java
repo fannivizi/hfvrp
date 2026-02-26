@@ -10,10 +10,11 @@ import utils.Statistics;
 
 public class Main {
     public static void main(String[] args) throws FileNotFoundException {
-        Reader reader = new utils.Reader("data/test20.vrp");
+        //Reader reader = new utils.Reader("data/test20.vrp");
         //Reader reader = new utils.Reader("data/X115-HVRP.vrp");
-        //Reader reader = new utils.Reader("data/X148-HVRP.vrp");
         //Reader reader = new Reader("data/X513-HVRP.vrp");
+        Reader reader = new Reader("data/X979-HVRP.vrp");
+
         List<Vehicle> fleet = reader.getFleet();
         List<Node> nodes = reader.getNodes();
         Node depot = reader.getDepot();
@@ -39,7 +40,7 @@ public class Main {
         //System.out.println(cw_res);
         System.out.println(new Statistics(cw_res));
 
-        Genetic g = new Genetic(fleet, nodes, depot, 200, 200);
+        Genetic g = new Genetic(fleet, nodes, depot, 200, 500);
         g.run();
     }
 }
