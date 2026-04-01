@@ -10,21 +10,21 @@ import java.io.PrintWriter;
 import java.util.*;
 
 public class Genetic {
-    private final int population_size;
-    private final List<Vehicle> fleet;
-    private final List<Node> nodes;
-    private final Node depot;
-    private final Random rand;
-    private List<Individual> population;
-    private final int generations;
+    protected final int population_size;
+    protected final List<Vehicle> fleet;
+    protected final List<Node> nodes;
+    protected final Node depot;
+    protected final Random rand;
+    protected List<Individual> population;
+    protected final int generations;
 
-    public Genetic(List<Vehicle> fleet, List<Node> nodes, Node depot, int population_size, int generations) {
+    public Genetic(List<Vehicle> fleet, List<Node> nodes, Node depot, int population_size, int generations, int seed) {
         this.population_size = population_size;
         this.fleet = new ArrayList<>(fleet);
         nodes.remove(depot);
         this.nodes = new ArrayList<>(nodes);
         this.depot = depot;
-        this.rand = new Random();
+        this.rand = new Random(seed);
         this.population = new ArrayList<>();
         this.generations = generations;
     }
@@ -47,7 +47,7 @@ public class Genetic {
 
         //put rest of the nodes in a separate route, so the coded routes are the same length
         if(!nodes.isEmpty()) {
-            Route r = new Route(null);
+            Route r = new Route((Vehicle) null);
             r.addNode(depot);
             while(!nodes.isEmpty()) {
                 r.addNode(nodes.removeFirst());
@@ -59,7 +59,7 @@ public class Genetic {
     //generate random solution
     public List<Route> random_sol() {
         List<Route> sol = new ArrayList<>();
-        Collections.shuffle(fleet);
+        Collections.shuffle(fleet, rand);
         List<Node> nodes = new ArrayList<>(this.nodes);
         //send vehicle to a random node until it has space
         for(Vehicle v: fleet) {
@@ -121,7 +121,7 @@ public class Genetic {
         List<Node> nodes = new ArrayList<>(this.nodes);
 
         //create an empty route
-        res.add(new Route(null));
+        res.add(new Route((Vehicle) null));
         res.getLast().addNode(depot);
 
         //construct routes from array
@@ -139,7 +139,7 @@ public class Genetic {
                 }
                 //if we have more nodes, create new route
                 if(!routes.isEmpty()) {
-                    res.add(new Route(null));
+                    res.add(new Route((Vehicle) null));
                     res.getLast().addNode(depot);
                 }
             } else {
@@ -162,21 +162,22 @@ public class Genetic {
 
     //generate the initial population
     public void population_init() {
-        //CWSavings cw = new CWSavings(fleet, nodes, depot);
-        //cw.run();
+        CWSavings cw = new CWSavings(fleet, nodes, depot);
+        cw.run();
         for (int i = 0; i < population_size; i++) {
-            //if(rand.nextDouble() < 0.02) {
-                //population.add(code(cw.getRoutes()));
-            //} else {
+            //for random ga, set to 0, for improving savings, set, to 0.1
+            if(rand.nextDouble() < 0.1) {
+                population.add(code(cw.getRoutes()));
+            } else {
                 population.add(code(random_sol()));
-            //}
+            }
         }
     }
 
     //calculate fitness
     public double fitness(List<Route> routes) {
         Statistics stats = new Statistics(routes);
-        return stats.getCost() + (nodes.size()+1 - stats.getNode_num()) * 1000000;
+        return stats.getCost() + (nodes.size()+1 - stats.getNode_num()) * 100000;
     }
 
     //values too similar for roulette, for maximizing
@@ -226,6 +227,20 @@ public class Genetic {
             }
             parents.add(population.get(min_i));
         }
+        return parents;
+    }
+
+    public List<Individual> first_n_selection(int i) {
+        List<Individual> population = new ArrayList<>(this.population);
+        Collections.sort(population);
+        List<Individual> parents = new ArrayList<>();
+        for (int j = 0; j < i; j++) {
+            parents.addAll(population.subList(0, population.size()/i));
+        }
+        while(parents.size() != population_size) {
+            parents.add(population.getFirst());
+        }
+        Collections.shuffle(parents, rand);
         return parents;
     }
 
@@ -368,14 +383,28 @@ public class Genetic {
     }
 
     public void swap_mutation(Individual i) {
-        int first = rand.nextInt(1, i.routes.size());
-        int second = rand.nextInt(1, i.routes.size());
+        int first = rand.nextInt(i.routes.size());
+        int second = rand.nextInt(i.routes.size());
         int num = i.routes.get(first);
         i.routes.set(first, i.routes.get(second));
         i.routes.set(second, num);
     }
 
-    public Individual repair(Individual ind) {
+    public void scramble_mutation(Individual i) {
+        int start = rand.nextInt(i.routes.size());
+        int end = rand.nextInt(start, i.routes.size());
+
+        Collections.shuffle(i.routes.subList(start, end));
+    }
+
+    public void inversion_mutation(Individual i) {
+        int start = rand.nextInt(i.routes.size());
+        int end = rand.nextInt(start, i.routes.size());
+
+        Collections.reverse(i.routes.subList(start, end));
+    }
+
+    public Individual evaluate(Individual ind) {
         List<Route> decoded = decode(ind);
         List<Node> rogue = new ArrayList<>();
 
@@ -430,8 +459,12 @@ public class Genetic {
             //mutation, repair
             while(!temp.isEmpty()) {
                 Individual ind = new Individual(Arrays.asList(temp.removeFirst()));
-                if(rand.nextDouble() < 0.05) swap_mutation(ind);
-                ind = repair(ind);
+                double r = rand.nextDouble();
+                //for random ga, set to 0.025, for improving savings, set to 0.2
+                if(r < 0.2) {
+                    swap_mutation(ind);
+                }
+                ind = evaluate(ind);
                 children.add(ind);
 
                 mean += ind.getFitness();
@@ -442,18 +475,18 @@ public class Genetic {
 
             //calculate and store mean and best
             Collections.sort(children);
-            double best = children.getLast().fitness;
+            double best = children.getFirst().fitness;
             bestFitness.add(best);
             mean = mean/children.size();
             meanFitness.add(mean);
 
             //print mean and best
-            if((i+1)%10 == 0) {
+            if((i+1)%50 == 0) {
                 System.out.println(i+1 + ".gen: " + best + ", mean: " + mean);
             }
         }
         Collections.sort(population);
-        System.out.println(new Statistics(decode(population.getLast())));
+        System.out.println(new Statistics(decode(population.getFirst())));
 
         PrintWriter writer = new PrintWriter("fitness.csv");
 
@@ -466,3 +499,5 @@ public class Genetic {
         writer.close();
     }
 }
+
+//local search on cw savings

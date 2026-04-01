@@ -51,14 +51,14 @@ public class Reader {
                         for (int i = 0; i < num_vehicles; i++) {
                             reader.nextInt();
                             Vehicle vehicle = fleet.get(i);
-                            vehicle.setFixed_cost(reader.nextInt()/10);
+                            vehicle.setFixed_cost(reader.nextInt()/100.0);
                         }
                         break;
                     case "VEHICLES_UNIT_DISTANCE_COST_SECTION":
                         for (int i = 0; i < num_vehicles; i++) {
                             reader.nextInt();
                             Vehicle vehicle = fleet.get(i);
-                            vehicle.setUnit_distance_cost(reader.nextInt()/10);
+                            vehicle.setUnit_distance_cost(reader.nextInt()/100.0);
                         }
                         break;
                     case "DEPOT_SECTION":

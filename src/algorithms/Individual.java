@@ -42,6 +42,6 @@ public class Individual implements Comparable<Individual>{
 
     @Override
     public int compareTo(Individual o) {
-        return Double.compare(o.fitness, this.fitness);
+        return Double.compare(this.fitness, o.fitness);
     }
 }

@@ -18,6 +18,11 @@ public class Route {
         this.nodes = new ArrayList<>(nodes);
     }
 
+    public Route(Route r) {
+        this.vehicle = r.vehicle;
+        this.nodes = new ArrayList<>(r.nodes);
+    }
+
     public Vehicle getVehicle() {
         return vehicle;
     }
@@ -72,7 +77,7 @@ public class Route {
          return demand() / (double)vehicle.getCapacity();
     }
 
-    public int totalCost() {
+    public double totalCost() {
         return vehicle.getFixed_cost() + vehicle.getUnit_distance_cost()*distance();
     }
 

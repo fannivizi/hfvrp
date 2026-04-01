@@ -10,7 +10,7 @@ public class Statistics {
     private int node_num;
     private int distance;
     private double efficiency;
-    private int cost;
+    private double cost;
 
     public Statistics(List<Route> routes) {
         this.routes = routes;
@@ -41,17 +41,15 @@ public class Statistics {
         return node_num;
     }
 
-    public int getCost() {
+    public double getCost() {
         return cost;
     }
 
     @Override
     public String toString() {
-        return "utils.Statistics: \n" +
-                "Vehicles used: " + vehicle_num +
+        return "Vehicles used: " + vehicle_num +
                 "\nNodes visited: " + node_num +
                 "\nDistance traveled: " + distance +
-                "\nEfficiency: " + efficiency +
-                "\nTotal cost: " + cost;
+                "\nTotal cost: " + String.format("%.2f",cost) + "\n";
     }
 }

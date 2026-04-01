@@ -37,11 +37,7 @@ public class Node {
 
     @Override
     public String toString() {
-        return "Node{" +
-                "index=" + index +
-                ", coord=" + coord +
-                ", demand=" + demand +
-                '}';
+        return "n" + index + ": d=" + demand;
     }
 
     public Double distance(Node other) {
