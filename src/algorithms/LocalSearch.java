@@ -27,7 +27,8 @@ public class LocalSearch {
     public double route_cost(List<Route> routes) {
         double cost = 0;
         for(Route r: routes) {
-            cost += r.totalCost();
+            if(r.getVehicle()==null) cost += 0;
+            else cost += r.totalCost();
         }
         return cost;
     }
@@ -47,9 +48,9 @@ public class LocalSearch {
 
     public void swap_all() {
         for (int i = 0; i < original.size(); i++) {
-            for (int j = 0; j < original.size(); j++) {
+            for (int j = i; j < original.size(); j++) {
                 for (int k = 1; k < original.get(i).getNodes().size()-1; k++) {
-                    for (int l = 1; l < original.get(j).getNodes().size()-1; l++) {
+                    for (int l = k+1; l < original.get(j).getNodes().size()-1; l++) {
                         List<Route> copy = new ArrayList<>();
                         for(Route r: original) {
                             copy.add(new Route(r));
@@ -92,19 +93,21 @@ public class LocalSearch {
 
     public void move_all() {
         for (int i = 0; i < original.size()-1; i++) {
-            for (int j = i+1; j < original.size(); j++) {
+            for (int j = 0; j < original.size(); j++) {
                 for (int k = 1; k < original.get(i).getNodes().size()-1; k++) {
+                    if(i != j) {
+                        List<Route> copy = new ArrayList<>();
+                        for (Route r : original) {
+                            copy.add(new Route(r));
+                        }
 
-                    List<Route> copy = new ArrayList<>();
-                    for(Route r: original) {
-                        copy.add(new Route(r));
+                        Route r1 = copy.get(i);
+                        Route r2 = copy.get(j);
+                        if(r1.getVehicle() == null || r2.getVehicle() == null) continue;
+                        move_between(r1, r2, k);
+
+                        if (route_cost(copy) < route_cost(best)) best = copy;
                     }
-
-                    Route r1 = copy.get(i);
-                    Route r2 = copy.get(j);
-                    move_between(r1, r2, k);
-
-                    if(route_cost(copy) < route_cost(best)) best = copy;
                 }
             }
         }

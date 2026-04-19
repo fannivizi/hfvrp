@@ -17,8 +17,9 @@ public class Genetic {
     protected final Random rand;
     protected List<Individual> population;
     protected final int generations;
+    protected final boolean savings;
 
-    public Genetic(List<Vehicle> fleet, List<Node> nodes, Node depot, int population_size, int generations, int seed) {
+    public Genetic(List<Vehicle> fleet, List<Node> nodes, Node depot, int population_size, int generations, int seed, boolean savings) {
         this.population_size = population_size;
         this.fleet = new ArrayList<>(fleet);
         nodes.remove(depot);
@@ -27,6 +28,7 @@ public class Genetic {
         this.rand = new Random(seed);
         this.population = new ArrayList<>();
         this.generations = generations;
+        this.savings = savings;
     }
 
     public void correct(List<Node> nodes, List<Route> sol) {
@@ -166,7 +168,7 @@ public class Genetic {
         cw.run();
         for (int i = 0; i < population_size; i++) {
             //for random ga, set to 0, for improving savings, set, to 0.1
-            if(rand.nextDouble() < 0.1) {
+            if(rand.nextDouble() < (savings?0.15:0)) {
                 population.add(code(cw.getRoutes()));
             } else {
                 population.add(code(random_sol()));
@@ -449,7 +451,11 @@ public class Genetic {
             mean = 0;
 
             //select parents
-            parents = tournament_selection(3);
+            if(savings) {
+                parents = first_n_selection(3);
+            } else {
+                parents = tournament_selection(3);
+            }
 
             //crossover
             while(!parents.isEmpty()) {
@@ -461,7 +467,7 @@ public class Genetic {
                 Individual ind = new Individual(Arrays.asList(temp.removeFirst()));
                 double r = rand.nextDouble();
                 //for random ga, set to 0.025, for improving savings, set to 0.2
-                if(r < 0.2) {
+                if(r < (savings?0.2:0.025)) {
                     swap_mutation(ind);
                 }
                 ind = evaluate(ind);
@@ -485,8 +491,6 @@ public class Genetic {
                 System.out.println(i+1 + ".gen: " + best + ", mean: " + mean);
             }
         }
-        Collections.sort(population);
-        System.out.println(new Statistics(decode(population.getFirst())));
 
         PrintWriter writer = new PrintWriter("fitness.csv");
 
@@ -497,6 +501,11 @@ public class Genetic {
         }
 
         writer.close();
+    }
+
+    public List<Route> getBest() {
+        Collections.sort(population);
+        return decode(population.getFirst());
     }
 }
 
