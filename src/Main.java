@@ -4,7 +4,6 @@ import java.util.List;
 
 import algorithms.*;
 import model.*;
-import utils.BestReader;
 import utils.Reader;
 import utils.Statistics;
 
