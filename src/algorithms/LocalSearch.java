@@ -132,7 +132,7 @@ public class LocalSearch {
         double cost = route_cost(original);
         int i = 0;
 
-        while(previous != cost && i < 10) {
+        while(previous != cost && i < 15) {
             previous = cost;
 
             swap_all();

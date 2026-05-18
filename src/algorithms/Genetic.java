@@ -10,14 +10,16 @@ import java.io.PrintWriter;
 import java.util.*;
 
 public class Genetic {
-    protected final int population_size;
-    protected final List<Vehicle> fleet;
-    protected final List<Node> nodes;
-    protected final Node depot;
-    protected final Random rand;
-    protected List<Individual> population;
-    protected final int generations;
-    protected final boolean savings;
+    private int population_size;
+    private List<Vehicle> fleet;
+    private List<Node> nodes;
+    private Node depot;
+    private Random rand;
+    private int seed;
+    private List<Individual> population;
+    private final int generations;
+    private final boolean savings;
+    private double mutation_rate;
 
     public Genetic(List<Vehicle> fleet, List<Node> nodes, Node depot, int population_size, int generations, int seed, boolean savings) {
         this.population_size = population_size;
@@ -29,6 +31,9 @@ public class Genetic {
         this.population = new ArrayList<>();
         this.generations = generations;
         this.savings = savings;
+        this.seed = seed;
+        if(savings) this.mutation_rate=0.15;
+        else this.mutation_rate=0.025;
     }
 
     public void correct(List<Node> nodes, List<Route> sol) {
@@ -246,7 +251,7 @@ public class Genetic {
         return parents;
     }
 
-    //TODO: produces duplicates
+    //produces duplicates
     public List<Integer[]> pmx_crossover(Individual parent1, Individual parent2) {
         List<Integer[]> children = new ArrayList<>();
 
@@ -396,7 +401,7 @@ public class Genetic {
         int start = rand.nextInt(i.routes.size());
         int end = rand.nextInt(start, i.routes.size());
 
-        Collections.shuffle(i.routes.subList(start, end));
+        Collections.shuffle(i.routes.subList(start, end), rand);
     }
 
     public void inversion_mutation(Individual i) {
@@ -454,12 +459,16 @@ public class Genetic {
             if(savings) {
                 parents = first_n_selection(3);
             } else {
-                parents = tournament_selection(3);
+                parents = tournament_selection(population_size/20);
             }
 
             //crossover
             while(!parents.isEmpty()) {
-                temp.addAll(cx_crossover(parents.removeFirst(), parents.removeFirst()));
+                if(savings) {
+                    temp.addAll(cx_crossover(parents.removeFirst(), parents.removeFirst()));
+                } else {
+                    temp.addAll(ox_crossover(parents.removeFirst(), parents.removeFirst()));
+                }
             }
 
             //mutation, repair
@@ -467,9 +476,11 @@ public class Genetic {
                 Individual ind = new Individual(Arrays.asList(temp.removeFirst()));
                 double r = rand.nextDouble();
                 //for random ga, set to 0.025, for improving savings, set to 0.2
-                if(r < (savings?0.2:0.025)) {
+                if(r < mutation_rate) {
                     swap_mutation(ind);
                 }
+                if(savings) mutation_rate+=0.001/population_size;
+                else mutation_rate+=0.001/population_size/2;
                 ind = evaluate(ind);
                 children.add(ind);
 
@@ -492,15 +503,17 @@ public class Genetic {
             }
         }
 
-        PrintWriter writer = new PrintWriter("fitness.csv");
+        if(!savings) {
+            PrintWriter writer = new PrintWriter("fitness_" + seed + ".csv");
 
-        writer.println("generation,best,mean");
+            writer.println("generation,best,mean");
 
-        for (int i = 0; i < bestFitness.size(); i++) {
-            writer.println(i + "," + bestFitness.get(i) + "," + meanFitness.get(i));
+            for (int i = 0; i < bestFitness.size(); i++) {
+                writer.println(i + "," + bestFitness.get(i) + "," + meanFitness.get(i));
+            }
+
+            writer.close();
         }
-
-        writer.close();
     }
 
     public List<Route> getBest() {
@@ -508,5 +521,3 @@ public class Genetic {
         return decode(population.getFirst());
     }
 }
-
-//local search on cw savings

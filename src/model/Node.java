@@ -40,7 +40,7 @@ public class Node {
         return "n" + index + ": d=" + demand;
     }
 
-    public Double distance(Node other) {
+    public double distance(Node other) {
         return Math.sqrt(Math.pow(other.getCoord().getX() - this.coord.getX(), 2) + Math.pow(other.getCoord().getY() - this.coord.getY(), 2));
     }
 }

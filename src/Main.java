@@ -10,7 +10,7 @@ import utils.Statistics;
 public class Main {
     public static void main(String[] args) throws FileNotFoundException {
         //best test files: test20, X148, X223, X275, X317, X429, X513, X701, X979
-        String file = "X148";
+        String file = "X979";
         Reader reader = new Reader("data/"+file+"-HVRP.vrp");
 
         List<Vehicle> fleet = reader.getFleet();
@@ -19,6 +19,8 @@ public class Main {
 
         PrintWriter res_writer = new PrintWriter("test/"+file+"-res.csv");
         res_writer.println("algorithm,seed,result,time,nodes");
+        int pop_size = nodes.size()/2;
+        if(pop_size%2 != 0) pop_size++;
 
         //write capacity and demand on screen
         int f_cap = 0;
@@ -32,7 +34,7 @@ public class Main {
         System.out.println("Cap: " + f_cap + ", demand: " + demand + "\n");
 
         long start, end;
-        int[] seeds = {32847, 63577, 10531, 40330, 7254};
+        int[] seeds = {32847};
 
         //savings
         System.out.println("CW:");
@@ -48,11 +50,13 @@ public class Main {
         System.out.println("Genetic:");
         for(int seed: seeds) {
             start = System.currentTimeMillis();
-            Genetic g = new Genetic(fleet, nodes, depot, 100, 500, seed, false);
+            Genetic g = new Genetic(fleet, nodes, depot, pop_size, nodes.size()*2, seed, false);
             g.run();
             end = System.currentTimeMillis();
+            System.out.println(end-start);
             eval("ga", res_writer, end-start, g.getBest(), seed);
         }
+
 
         //local search
         System.out.println("Savings + local search:");
